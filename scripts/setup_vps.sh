@@ -5,7 +5,8 @@ set -e
 echo "🚀 Iniciando Setup Completo..."
 
 # 1. Instala pacotes básicos
-sudo apt update && sudo apt install -y python3-pip python3-venv git rclone fuse3 nano tmux
+sudo apt update && sudo apt install -y python3-pip python3-venv git fuse3 nano tmux
+sudo -v ; curl https://rclone.org/install.sh | sudo bash
 
 # 2. Configura ambiente Python (UV)
 curl -LsSf https://astral.sh/uv/install.sh | sh
