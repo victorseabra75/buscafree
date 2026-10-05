@@ -1,0 +1,12 @@
+{
+  "table": "empresas",
+  "columns": {
+    "cnpj_basico": "VARCHAR",
+    "razao_social": "VARCHAR",
+    "natureza_juridica": "VARCHAR",
+    "qualificacao_responsavel": "VARCHAR",
+    "capital_social": "DOUBLE",
+    "porte_empresa": "VARCHAR",
+    "ente_federativo_responsavel": "VARCHAR"
+  }
+}

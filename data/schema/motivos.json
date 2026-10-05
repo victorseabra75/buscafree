@@ -1,0 +1,7 @@
+{
+  "table": "motivos",
+  "columns": {
+    "codigo": "VARCHAR",
+    "descricao": "VARCHAR"
+  }
+}

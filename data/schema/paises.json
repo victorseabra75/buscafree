@@ -1,0 +1,7 @@
+{
+  "table": "paises",
+  "columns": {
+    "codigo": "VARCHAR",
+    "descricao": "VARCHAR"
+  }
+}

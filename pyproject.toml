@@ -1,0 +1,34 @@
+[project]
+name = "buscafri"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "duckdb",
+    "pandas",
+    "pyarrow",
+    "python-dotenv",
+    "playwright",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "pytest",
+    "poethepoet",
+]
+
+[tool.poe.tasks]
+fix = "ruff check . --fix"
+format = "ruff format ."
+lint = "ruff check ."
+test = "pytest -v"
+
+[tool.poe.tasks.dev]
+sequence = ["fix", "format", "lint", "test"]
+
+[tool.uv]
+managed = true
+package = false

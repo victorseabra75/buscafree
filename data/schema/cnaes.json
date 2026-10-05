@@ -1,0 +1,7 @@
+{
+  "table": "cnaes",
+  "columns": {
+    "codigo": "VARCHAR",
+    "descricao": "VARCHAR"
+  }
+}

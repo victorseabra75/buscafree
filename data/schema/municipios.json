@@ -1,0 +1,7 @@
+{
+  "table": "municipios",
+  "columns": {
+    "codigo": "VARCHAR",
+    "descricao": "VARCHAR"
+  }
+}

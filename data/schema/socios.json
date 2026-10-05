@@ -1,0 +1,16 @@
+{
+  "table": "socios",
+  "columns": {
+    "cnpj_basico": "VARCHAR",
+    "identificador_socio": "VARCHAR",
+    "nome_socio": "VARCHAR",
+    "cnpj_cpf_socio": "VARCHAR",
+    "qualificacao_socio": "VARCHAR",
+    "data_entrada_sociedade": "DATE",
+    "pais": "VARCHAR",
+    "representante_legal": "VARCHAR",
+    "nome_representante": "VARCHAR",
+    "qualificacao_representante": "VARCHAR",
+    "faixa_etaria": "INTEGER"
+  }
+}

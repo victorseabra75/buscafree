@@ -1,0 +1,38 @@
+# Ambiente Virtual Python
+venv/
+.venv/
+env/
+
+# Arquivos de Dados Pesados (Ignora CSV, ZIP, Parquet e bancos locais)
+*.csv
+*.zip
+*.parquet
+*.db
+*.sqlite
+
+# Cache do Python e arquivos do sistema
+__pycache__/
+*.py[cod]
+.DS_Store
+.vscode/
+.env
+
+#Dados brutos dos CNPJS 
+CNPJS 2026 09/
+CNPJS 2026 09.zip
+*.accdb
+*.csv
+*.pdf
+
+.env
+buscafree/
+.venv/
+data/raw/
+data/processed/
+__pycache__/
+
+# Adicionarei isso ao .gitignore
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl

@@ -1,0 +1,12 @@
+{
+  "table": "simples",
+  "columns": {
+    "cnpj_basico": "VARCHAR",
+    "opcao_simples": "VARCHAR",
+    "data_opcao_simples": "DATE",
+    "data_exclusao_simples": "DATE",
+    "opcao_mei": "VARCHAR",
+    "data_opcao_mei": "DATE",
+    "data_exclusao_mei": "DATE"
+  }
+}

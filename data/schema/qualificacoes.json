@@ -1,0 +1,7 @@
+{
+  "table": "qualificacoes",
+  "columns": {
+    "codigo": "VARCHAR",
+    "descricao": "VARCHAR"
+  }
+}
