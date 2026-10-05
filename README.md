@@ -122,3 +122,8 @@ Dado o limite de 1GB RAM na GCP:
 comando para inicializar o projeto:
 .\buscafree\Scripts\activate
 uv sync
+
+uv run ruff check .
+uv run ruff check . --fix
+uv run ruff format
+uv run pytest
