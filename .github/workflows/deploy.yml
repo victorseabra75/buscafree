@@ -37,7 +37,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/buscafri
+            # Adiciona o uv ao PATH explicitamente
+            export PATH="$HOME/.local/bin:$PATH"
+            
             git pull origin main
             uv sync
+            
+            # Reinicia os serviços usando o systemctl do usuário (ou sem pedir senha)
             sudo systemctl restart buscafri-api
             sudo systemctl restart buscafri-streamlit
