@@ -140,3 +140,6 @@ copiar os secrets para o arquivo .env na vps
 ativar o ambiente virtual na vps linux ubuntu lts 24
 source .venv/bin/activate
 
+para conectar o github action com a vps, 
+preciso da chave privada no github e depois
+a chave publica dentro da maquina virtual
