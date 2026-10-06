@@ -28,8 +28,9 @@ def r2_keep_alive():
                 [rclone_bin, "lsf", R2_REMOTE, "--max-depth", "1"],
                 capture_output=True,
                 timeout=10,
+                check=False,
             )
-        except:
+        except Exception:  # noqa: S110, BLE001
             pass
         time.sleep(5)
 
@@ -133,7 +134,7 @@ if buscar:
         else:
             st.error(f"Erro na API: {response.text}")
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         st.error(f"Falha na conexão com o servidor: {e}")
 else:
     st.info("Use os filtros na barra lateral e clique em Pesquisar para começar.")

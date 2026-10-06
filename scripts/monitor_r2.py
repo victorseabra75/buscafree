@@ -30,7 +30,9 @@ def check_connectivity():
                 capture_output=True,
                 text=True,
                 timeout=10,
+                check=False,
             )
+
 
             latency = (time.time() - start_time) * 1000
 
@@ -48,8 +50,9 @@ def check_connectivity():
 
     except KeyboardInterrupt:
         print("\n🛑 Monitoramento encerrado pelo usuário.")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"\n❌ Erro crítico no monitor: {e}")
+
 
 
 if __name__ == "__main__":

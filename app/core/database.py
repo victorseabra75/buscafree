@@ -29,7 +29,7 @@ class DuckDBClient:
             # self.conn.execute("SET s3_region='auto';")
 
             print("✅ Conectado ao DuckDB")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"❌ Erro ao conectar ao DuckDB: {e}")
 
     def query(self, sql):

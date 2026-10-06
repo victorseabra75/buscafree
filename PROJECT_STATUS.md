@@ -48,7 +48,7 @@
 ### Frontend (Streamlit)
 - [x] Desenvolvimento inicial da UI Dashboard (`app/ui.py`).
 - [x] Implementação do processo em background (Threading) para manter o Rclone conectado ("Keep-Alive" no R2).
-- [ ] Deploy do Streamlit e liberação da porta `8501`.
+- [x] Deploy do Streamlit e liberação da porta `8501`.
 
 ---
 
@@ -58,12 +58,14 @@
 3. **Consulta Remota (httpfs vs rclone)**: Apesar de o DuckDB possuir extensão `httpfs`, optamos pelo uso contínuo do **Rclone** como ponte para o Cloudflare R2 por sua facilidade no upload durante o ETL. A API e a UI agora utilizam este espelhamento.
 4. **Exportação Streaming**: As rotas de CSV/XLSX na API não geram arquivos físicos no servidor; utilizam o `StreamingResponse` com buffers em memória para não consumir espaço de disco.
 5. **Automação de Deployment**: Toda a alteração na branch `main` executa `ruff`, valida os testes no `pytest` e entra via SSH na VPS apenas se o código estiver íntegro.
+6. **Gerenciamento de Dependências**: Migração completa para `uv` com `uv.lock` e `pyproject.toml` para garantir paridade exata entre ambiente local e VPS.
 
 ---
 
-## 4. Próxima Task (A Fazer Agora na nova Janela)
-**[TICKET-05] e [TICKET-06]: Refinamento do Streamlit e Validação Final**
-- **Ação 1**: Confirmar se o deploy do GitHub Actions (commit recente) obteve êxito na VPS.
-- **Ação 2**: Liberar a porta `8501` no Firewall da Google Cloud para acesso ao Dashboard.
-- **Ação 3**: Testar exaustivamente a UI do Streamlit integrada à API (buscas e exportações).
-- **Ação 4**: Monitorar os limites de RAM da VPS durante uma pesquisa pesada (ex: Filtro apenas por Estado "SP").
+## 4. Próxima Task (A Fazer Agora)
+**[TICKET-07]: Validação em Ambiente de Produção (VPS)**
+- [x] Verificar sucesso do deploy (GitHub Actions).
+- [x] Validar persistência do Rclone (monitoramento de logs).
+- [ ] Liberar porta 8501 no Firewall da GCP.
+- [ ] Realizar smoke tests na API e UI remota.
+

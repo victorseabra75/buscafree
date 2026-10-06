@@ -1,0 +1,8 @@
+node_modules/
+.venv/
+venv/
+data/raw/
+data/preprocessed/
+.git/
+*.csv
+*.zip

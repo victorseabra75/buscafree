@@ -83,7 +83,7 @@ async def buscar_empresas(
         data = results.to_dict("records")
 
         return {"total_count": int(total), "page": page, "limit": limit, "data": data}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"Erro na consulta: {e!s}")
 
 
@@ -151,5 +151,5 @@ async def exportar_dados(
                     "Content-Disposition": "attachment; filename=buscafri_export.xlsx"
                 },
             )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"Erro na exportação: {e!s}")
