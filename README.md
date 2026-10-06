@@ -143,3 +143,5 @@ source .venv/bin/activate
 para conectar o github action com a vps, 
 preciso da chave privada no github e depois
 a chave publica dentro da maquina virtual.
+
+pesquisar o que é visudo
