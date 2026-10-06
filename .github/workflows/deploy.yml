@@ -8,25 +8,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Setup UV
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
-        
-      - name: Install Dependencies
-        run: |
-          source $HOME/.cargo/env
-          uv sync --dev
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          
+      - name: Install Python & Dependencies
+        run: uv sync --dev
           
       - name: Run Linter
-        run: |
-          source $HOME/.cargo/env
-          uv run ruff check .
+        run: uv run ruff check .
           
       - name: Run Tests
-        run: |
-          source $HOME/.cargo/env
-          uv run pytest tests/
+        run: uv run pytest tests/
   
   deploy:
     needs: test
@@ -34,13 +30,14 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_IP }}
-          username: victo
+          username: victor_seabra_ba
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/buscafree
+            cd ~/buscafri
             git pull origin main
-            ~/.local/bin/uv pip install -r requirements.txt
+            uv sync
             sudo systemctl restart buscafri-api
+            sudo systemctl restart buscafri-streamlit

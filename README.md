@@ -127,3 +127,16 @@ uv run ruff check .
 uv run ruff check . --fix
 uv run ruff format
 uv run pytest
+
+git clone https://github.com/victorseabra75/buscafri.git
+
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+uv venv 
+uv sync
+
+copiar os secrets para o arquivo .env na vps
+
+ativar o ambiente virtual na vps linux ubuntu lts 24
+source .venv/bin/activate
+
