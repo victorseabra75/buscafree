@@ -22,28 +22,27 @@ def get_rclone_path():
 
 def get_table_name(file_name):
     name = file_name.upper()
-    if "CNAE" in name: 
+    if "CNAE" in name:
         return "cnaes"
-    if "EMPRE" in name: 
+    if "EMPRE" in name:
         return "empresas"
-    if "ESTAB" in name: 
+    if "ESTAB" in name:
         return "estabelecimentos"
-    if "MOTI" in name: 
+    if "MOTI" in name:
         return "motivos"
-    if "MUNIC" in name: 
+    if "MUNIC" in name:
         return "municipios"
-    if "NATJU" in name: 
+    if "NATJU" in name:
         return "naturezas"
-    if "PAIS" in name: 
+    if "PAIS" in name:
         return "paises"
-    if "QUAL" in name: 
+    if "QUAL" in name:
         return "qualificacoes"
-    if "SIMPLE" in name: 
+    if "SIMPLE" in name:
         return "simples"
-    if "SOCIO" in name: 
+    if "SOCIO" in name:
         return "socios"
     return Path(file_name).stem
-
 
 
 def convert_to_parquet(file_path):
