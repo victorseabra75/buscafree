@@ -11,6 +11,9 @@ dependencies = [
     "pyarrow",
     "python-dotenv",
     "playwright",
+    "slowapi",
+    "xlsxwriter",
+    "streamlit",
     "httpx2>=2.13.1",
     "pytest-asyncio>=1.4.0",
 ]
