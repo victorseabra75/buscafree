@@ -16,18 +16,17 @@ jobs:
       - name: Install Dependencies
         run: |
           source $HOME/.cargo/env
-          uv pip install -r requirements.txt pytest httpx
+          uv sync --dev
           
       - name: Run Linter
         run: |
           source $HOME/.cargo/env
-          uv pip install ruff
-          ruff check .
+          uv run ruff check .
           
       - name: Run Tests
         run: |
           source $HOME/.cargo/env
-          pytest tests/
+          uv run pytest tests/
   
   deploy:
     needs: test
