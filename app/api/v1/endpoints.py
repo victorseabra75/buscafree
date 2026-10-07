@@ -13,8 +13,9 @@ from app.schemas.empresa import EmpresaResponse
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
-# Caminho para os Parquets no R2 (via rclone mount)
-R2_MOUNT = os.getenv("R2_MOUNT_PATH", "/mnt/data/buscafri")
+# Caminho direto para os Parquets no Cloudflare R2 via protocolo S3
+BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "buscafri-data")
+R2_PATH = f"s3://{BUCKET_NAME}"
 
 
 @router.get("/busca", response_model=EmpresaResponse)
@@ -63,15 +64,15 @@ async def buscar_empresas(
             est.cnae_fiscal_principal,
             est.correio_eletronico,
             CONCAT('(', est.ddd_1, ') ', est.telefone_1) as telefone_1
-        FROM '{R2_MOUNT}/estabelecimentos/*.parquet' AS est
-        JOIN '{R2_MOUNT}/empresas/*.parquet' AS emp ON est.cnpj_basico = emp.cnpj_basico
+        FROM '{R2_PATH}/estabelecimentos/*.parquet' AS est
+        JOIN '{R2_PATH}/empresas/*.parquet' AS emp ON est.cnpj_basico = emp.cnpj_basico
         WHERE {where_sql}
         LIMIT {limit} OFFSET {offset}
     """
 
     count_sql = f"""
         SELECT COUNT(*) as total 
-        FROM '{R2_MOUNT}/estabelecimentos/*.parquet' AS est 
+        FROM '{R2_PATH}/estabelecimentos/*.parquet' AS est 
         WHERE {where_sql}
     """
 
@@ -120,8 +121,8 @@ async def exportar_dados(
         SELECT 
             est.cnpj_basico, emp.razao_social, est.nome_fantasia, 
             est.uf, est.municipio, est.correio_eletronico, est.telefone_1
-        FROM '{R2_MOUNT}/estabelecimentos/*.parquet' AS est
-        JOIN '{R2_MOUNT}/empresas/*.parquet' AS emp ON est.cnpj_basico = emp.cnpj_basico
+        FROM '{R2_PATH}/estabelecimentos/*.parquet' AS est
+        JOIN '{R2_PATH}/empresas/*.parquet' AS emp ON est.cnpj_basico = emp.cnpj_basico
         WHERE {where_sql}
         LIMIT 10000
     """

@@ -25,30 +25,23 @@
 - [x] Configuração da VPS GCP (`e2-micro`).
 - [x] Implementação de IaC via Terraform (`main.tf`).
 - [x] Criação do script de Setup Automático Bare-Metal (`scripts/setup_vps.sh`) com `systemd` para auto-restart.
-- [x] Padronização do ambiente Python com `uv` e ambiente virtual `buscafree`.
+- [x] Padronização do ambiente Python com `uv` e ambiente virtual na VPS.
+- [x] Configuração dos serviços Systemd para FastAPI (`buscafri-api.service` na porta 8000) e Streamlit (`buscafri-streamlit.service` na porta 8501).
+- [x] Configuração de permissões `NOPASSWD` via `visudo` para deploy automatizado seguro.
 
-### ETL (Ingestão de Dados)
-- [x] Script de extração web e download (`scripts/web_scraper.py`).
-- [x] Mapeamento dos schemas das 10 tabelas da RFB (`data/schema/*.json`).
-- [x] Script de Conversão CSV -> Parquet via DuckDB (`scripts/convert_to_parquet.py`).
-- [x] Otimização contra `MemoryError` no ETL via leitura em `chunking` (blocos de 100k linhas) usando Pandas.
-- [x] Redundância no R2: lógica para evitar uploads duplicados e manter backup local temporário.
+### ETL & Conexão Cloud (R2)
+- [x] Script de extração e conversão CSV -> Parquet.
+- [x] Configuração e testes de conectividade com o Cloudflare R2 (`r2:buscafri-data`).
+- [x] Injeção automatizada do arquivo `rclone.conf` via **GitHub Secrets** (`RCLONE_CONF`) diretamente na VPS durante o deploy.
 
-### Backend (API FastAPI)
-- [x] Endpoint Health-check (`/health`).
-- [x] Endpoint de Busca Avançada (`GET /api/v1/busca`) com filtros de UF, Município, CNAE, Status, Email e Telefone.
-- [x] Endpoint de Exportação via Streaming (`GET /api/v1/exportar/{formato}`) suportando CSV e XLSX.
-- [x] Proteção e Segurança da API via Rate Limiting (10 req/min).
+### Backend (API FastAPI) & Frontend (Streamlit)
+- [x] Endpoint Health-check e rotas de Busca avançada de CNPJs.
+- [x] Deploy da API e Streamlit operando nas portas 8000 e 8501 da VPS.
 
 ### CI/CD e Qualidade (QA)
-- [x] Criação do Pipeline GitHub Actions (`.github/workflows/deploy.yml`).
-- [x] Integração de injeção de segredos via SSH para deploy contínuo na VPS.
-- [x] Criação da suíte de testes (`tests/`) para API e ETL.
-
-### Frontend (Streamlit)
-- [x] Desenvolvimento inicial da UI Dashboard (`app/ui.py`).
-- [x] Implementação do processo em background (Threading) para manter o Rclone conectado ("Keep-Alive" no R2).
-- [x] Deploy do Streamlit e liberação da porta `8501`.
+- [x] Criação e refinamento do Pipeline GitHub Actions (`.github/workflows/deploy.yml`).
+- [x] Autenticação via SSH com chaves de deploy e injeção de segredos (`VPS_IP`, `SSH_PRIVATE_KEY`, `RCLONE_CONF`).
+- [x] Pipeline 100% automatizado: `git push` valida linters, testes, puxa código na VPS, injeta credenciais do R2, sincroniza dependências com `uv sync` e reinicia os serviços em segundo plano.
 
 ---
 

@@ -145,3 +145,6 @@ preciso da chave privada no github e depois
 a chave publica dentro da maquina virtual.
 
 pesquisar o que é visudo
+
+para pesquisar no r2 as pastas existentes:
+rclone lsf r2:buscafri-data --max-depth 1

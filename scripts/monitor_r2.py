@@ -27,10 +27,7 @@ def check_connectivity():
 
     print(f"🔍 Iniciando monitoramento de conectividade com {R2_REMOTE}...")
     print("Account ID: 48fa1385059fbcc68f11774bdcb577c1")
-    print(
-        "S3 API: "
-        "https://48fa1385059fbcc68f11774bdcb577c1.r2.cloudflarestorage.com"
-    )
+    print("S3 API: https://48fa1385059fbcc68f11774bdcb577c1.r2.cloudflarestorage.com")
 
     try:
         while True:
@@ -70,9 +67,7 @@ def check_connectivity():
             else:
                 err_msg = result.stderr.strip().replace("\n", " ")
 
-                sys.stdout.write(
-                    f"\r❌ R2 Falhou | Erro: {err_msg[:45]}...          "
-                )
+                sys.stdout.write(f"\r❌ R2 Falhou | Erro: {err_msg[:45]}...          ")
 
             sys.stdout.flush()
             time.sleep(CHECK_INTERVAL)
