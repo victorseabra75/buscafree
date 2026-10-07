@@ -36,6 +36,9 @@
 
 ### Backend (API FastAPI) & Frontend (Streamlit)
 - [x] Endpoint Health-check e rotas de Busca avançada de CNPJs.
+- [x] Refatoração do DuckDB (`app/core/database.py`) para carregamento da extensão `httpfs` e suporte nativo S3/HTTPS para consulta direta no Cloudflare R2.
+- [x] Refatoração dos endpoints de busca e exportação (`app/api/v1/endpoints.py`) para consultar diretamente o bucket remoto (`s3://buscafri-data/...`), eliminando a necessidade de baixar os 9GB de dados Parquet para o disco local da VPS `e2-micro`.
+- [x] Correção de linter (`Ruff B025` - blocos `except` duplicados).
 - [x] Deploy da API e Streamlit operando nas portas 8000 e 8501 da VPS.
 
 ### CI/CD e Qualidade (QA)
@@ -48,7 +51,7 @@
 ## 3. Decisões Técnicas & Otimizações (ADR)
 1. **Bare Metal sobre Docker**: Abandonamos a ideia do Docker para o ambiente de produção a fim de preservar o limite restrito de 1GB de RAM da VM `e2-micro`.
 2. **Separação Responsável no ETL**: O script de conversão não carrega grandes tabelas na RAM. Pandas é usado apenas para iterar o arquivo em *chunks* e passá-los ao DuckDB para escrita imediata no disco (geração do Parquet).
-3. **Consulta Remota (httpfs vs rclone)**: Apesar de o DuckDB possuir extensão `httpfs`, optamos pelo uso contínuo do **Rclone** como ponte para o Cloudflare R2 por sua facilidade no upload durante o ETL. A API e a UI agora utilizam este espelhamento.
+3. **Leitura Direta Remota (DuckDB S3 via R2)**: Devido ao limite estrito de armazenamento e memória da VM `e2-micro`, o DuckDB foi configurado para consultar os arquivos Parquet diretamente do Cloudflare R2 (`s3://buscafri-data/...`) sob demanda via extensão `httpfs`, eliminando a necessidade de sincronizar ou armazenar os 9GB de dados localmente no servidor.
 4. **Exportação Streaming**: As rotas de CSV/XLSX na API não geram arquivos físicos no servidor; utilizam o `StreamingResponse` com buffers em memória para não consumir espaço de disco.
 5. **Automação de Deployment**: Toda a alteração na branch `main` executa `ruff`, valida os testes no `pytest` e entra via SSH na VPS apenas se o código estiver íntegro.
 6. **Gerenciamento de Dependências**: Migração completa para `uv` com `uv.lock` e `pyproject.toml` para garantir paridade exata entre ambiente local e VPS.
