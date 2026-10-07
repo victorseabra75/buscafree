@@ -1,15 +1,18 @@
+import os
 import subprocess
 import sys
 import time
 from pathlib import Path
+from dotenv import load_dotenv
 
-# Configurações
-R2_REMOTE = "r2:buscafri-data"
+load_dotenv()
+
+# Configurações do R2 obtidas do .env ou padrão
+R2_REMOTE = os.getenv("R2_REMOTE", "r2:buscafri-data")
 CHECK_INTERVAL = 5  # segundos
 
 
 def get_rclone_path():
-    # Tenta local primeiro, depois PATH
     local_rclone = Path("rclone.exe")
     if local_rclone.exists():
         return str(local_rclone.absolute())
@@ -19,20 +22,30 @@ def get_rclone_path():
 def check_connectivity():
     rclone_bin = get_rclone_path()
     print(f"🔍 Iniciando monitoramento de conectividade com {R2_REMOTE}...")
+    print("Account ID: 48fa1385059fbcc68f11774bdcb577c1")
+    print("S3 API: https://48fa1385059fbcc68f11774bdcb577c1.r2.cloudflarestorage.com")
 
     try:
         while True:
             start_time = time.time()
 
-            # Executa um comando leve para testar a conexão (lsf limitado a 1 item)
+            # Passa as variáveis de ambiente do .env para o subprocesso do rclone se necessário
+            env = os.environ.copy()
+            if os.getenv("R2_ACCESS_KEY_ID"):
+                env["RCLONE_R2_ACCESS_KEY_ID"] = os.getenv("R2_ACCESS_KEY_ID")
+            if os.getenv("R2_SECRET_ACCESS_KEY"):
+                env["RCLONE_R2_SECRET_ACCESS_KEY"] = os.getenv("R2_SECRET_ACCESS_KEY")
+            if os.getenv("R2_ENDPOINT"):
+                env["RCLONE_R2_ENDPOINT"] = os.getenv("R2_ENDPOINT")
+
             result = subprocess.run(
                 [rclone_bin, "lsf", R2_REMOTE, "--max-depth", "1"],
                 capture_output=True,
                 text=True,
                 timeout=10,
                 check=False,
+                env=env,
             )
-
 
             latency = (time.time() - start_time) * 1000
 
@@ -41,12 +54,13 @@ def check_connectivity():
                     f"\r✅ R2 Online | Latência: {latency:.2f}ms | Status: OK   "
                 )
             else:
+                err_msg = result.stderr.strip().replace("\n", " ")
                 sys.stdout.write(
-                    f"\r❌ R2 Falhou | Erro: {result.stderr[:30]}...          "
+                    f"\r❌ R2 Falhou | Erro: {err_msg[:45]}...          "
                 )
 
             sys.stdout.flush()
-            time.sleep(CHECK_INTERVAL)
+            time.sleep(CHECK_INSTR if 'CHECK_INSTR' in globals() else CHECK_INTERVAL)
 
     except KeyboardInterrupt:
         print("\n🛑 Monitoramento encerrado pelo usuário.")

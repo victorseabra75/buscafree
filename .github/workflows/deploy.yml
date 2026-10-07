@@ -37,12 +37,15 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/buscafri
-            # Adiciona o uv ao PATH explicitamente
             export PATH="$HOME/.local/bin:$PATH"
             
             git pull origin main
+            
+            # Cria a pasta do rclone e gera o rclone.conf automaticamente usando o Secret do GitHub
+            mkdir -p ~/.config/rclone/
+            echo "${{ secrets.RCLONE_CONF }}" > ~/.config/rclone/rclone.conf
+            
             uv sync
             
-            # Reinicia os serviços usando o systemctl do usuário (ou sem pedir senha)
             sudo systemctl restart buscafri-api
             sudo systemctl restart buscafri-streamlit
