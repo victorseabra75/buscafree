@@ -3,6 +3,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,29 +15,42 @@ CHECK_INTERVAL = 5  # segundos
 
 def get_rclone_path():
     local_rclone = Path("rclone.exe")
+
     if local_rclone.exists():
         return str(local_rclone.absolute())
+
     return "rclone"
 
 
 def check_connectivity():
     rclone_bin = get_rclone_path()
+
     print(f"🔍 Iniciando monitoramento de conectividade com {R2_REMOTE}...")
     print("Account ID: 48fa1385059fbcc68f11774bdcb577c1")
-    print("S3 API: https://48fa1385059fbcc68f11774bdcb577c1.r2.cloudflarestorage.com")
+    print(
+        "S3 API: "
+        "https://48fa1385059fbcc68f11774bdcb577c1.r2.cloudflarestorage.com"
+    )
 
     try:
         while True:
             start_time = time.time()
 
-            # Passa as variáveis de ambiente do .env para o subprocesso do rclone se necessário
+            # Passa as variáveis de ambiente do .env para o subprocesso do rclone.
             env = os.environ.copy()
-            if os.getenv("R2_ACCESS_KEY_ID"):
-                env["RCLONE_R2_ACCESS_KEY_ID"] = os.getenv("R2_ACCESS_KEY_ID")
-            if os.getenv("R2_SECRET_ACCESS_KEY"):
-                env["RCLONE_R2_SECRET_ACCESS_KEY"] = os.getenv("R2_SECRET_ACCESS_KEY")
-            if os.getenv("R2_ENDPOINT"):
-                env["RCLONE_R2_ENDPOINT"] = os.getenv("R2_ENDPOINT")
+
+            access_key = os.getenv("R2_ACCESS_KEY_ID")
+            secret_key = os.getenv("R2_SECRET_ACCESS_KEY")
+            endpoint = os.getenv("R2_ENDPOINT")
+
+            if access_key:
+                env["RCLONE_R2_ACCESS_KEY_ID"] = access_key
+
+            if secret_key:
+                env["RCLONE_R2_SECRET_ACCESS_KEY"] = secret_key
+
+            if endpoint:
+                env["RCLONE_R2_ENDPOINT"] = endpoint
 
             result = subprocess.run(
                 [rclone_bin, "lsf", R2_REMOTE, "--max-depth", "1"],
@@ -55,18 +69,19 @@ def check_connectivity():
                 )
             else:
                 err_msg = result.stderr.strip().replace("\n", " ")
+
                 sys.stdout.write(
                     f"\r❌ R2 Falhou | Erro: {err_msg[:45]}...          "
                 )
 
             sys.stdout.flush()
-            time.sleep(CHECK_INSTR if 'CHECK_INSTR' in globals() else CHECK_INTERVAL)
+            time.sleep(CHECK_INTERVAL)
 
     except KeyboardInterrupt:
         print("\n🛑 Monitoramento encerrado pelo usuário.")
+
     except Exception as e:  # noqa: BLE001
         print(f"\n❌ Erro crítico no monitor: {e}")
-
 
 
 if __name__ == "__main__":
