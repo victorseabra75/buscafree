@@ -24,10 +24,20 @@ def get_rclone_path():
 
 def check_connectivity():
     rclone_bin = get_rclone_path()
-    #remover variaveis de ambiente do r2 do codigo e jogar no secrets do github
+    
+    access_key = os.getenv("R2_ACCESS_KEY_ID")
+    if not access_key:
+        raise ValueError("A variável de ambiente R2_ACCESS_KEY_ID não está definida.")
+
+    secret_key = os.getenv("R2_SECRET_ACCESS_KEY")
+    if not secret_key:
+        raise ValueError("A variável de ambiente R2_SECRET_ACCESS_KEY não está definida.")
+
+    endpoint = os.getenv("R2_ENDPOINT")
+    if not endpoint:
+        raise ValueError("A variável de ambiente R2_ENDPOINT não está definida.")
+
     print(f"🔍 Iniciando monitoramento de conectividade com {R2_REMOTE}...")
-    print("Account ID: 48fa1385059fbcc68f11774bdcb577c1")
-    print("S3 API: https://48fa1385059fbcc68f11774bdcb577c1.r2.cloudflarestorage.com")
 
     try:
         while True:

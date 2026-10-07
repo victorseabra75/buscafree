@@ -20,8 +20,12 @@ class DuckDBClient:
             self.conn.execute("LOAD httpfs;")
 
             # Configura credenciais para o Cloudflare R2
-            #Remover as variaveis de ambiente do r2 e colocar no secrets do github
-            account_id = os.getenv("R2_ACCOUNT_ID", "48fa1385059fbcc68f11774bdcb577c1")
+            account_id = os.getenv("R2_ACCOUNT_ID")
+            if not account_id:
+                raise ValueError(
+                    "A variável de ambiente R2_ACCOUNT_ID não está definida."
+                )
+
             endpoint = os.getenv(
                 "R2_ENDPOINT", f"https://{account_id}.r2.cloudflarestorage.com"
             )
@@ -29,14 +33,17 @@ class DuckDBClient:
             # Remove https:// do endpoint para o formato do DuckDB se necessário
             clean_endpoint = endpoint.replace("https://", "").replace("http://", "")
 
-            access_key = os.getenv(
-                "R2_ACCESS_KEY_ID", "3840fcd4b7aea43f3c7c5bd77bc21115"
-            )
-            #Remover as variaveis de ambiente do r2 e colocar no secrets do github
-            secret_key = os.getenv(
-                "R2_SECRET_ACCESS_KEY",
-                "ea8133f8c99f17420ac895de78d025aede56445ceb140559d013f7af0e85b3ad",
-            )
+            access_key = os.getenv("R2_ACCESS_KEY_ID")
+            if not access_key:
+                raise ValueError(
+                    "A variável de ambiente R2_ACCESS_KEY_ID não está definida."
+                )
+
+            secret_key = os.getenv("R2_SECRET_ACCESS_KEY")
+            if not secret_key:
+                raise ValueError(
+                    "A variável de ambiente R2_SECRET_ACCESS_KEY não está definida."
+                )
 
             self.conn.execute(f"SET s3_endpoint='{clean_endpoint}';")
             self.conn.execute(f"SET s3_access_key_id='{access_key}';")
