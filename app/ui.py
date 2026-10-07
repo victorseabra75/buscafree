@@ -138,4 +138,4 @@ if buscar:
         st.error(f"Falha na conexão com o servidor: {e}")
 else:
     st.info("Use os filtros na barra lateral e clique em Pesquisar para começar.")
-    st.image("https://buscafri.com.br/logo.png", width=200)  # Exemplo de logo
+    #st.image("https://buscafri.com.br/logo.png", width=200)  # Exemplo de logo

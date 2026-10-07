@@ -20,6 +20,7 @@ class DuckDBClient:
             self.conn.execute("LOAD httpfs;")
 
             # Configura credenciais para o Cloudflare R2
+            #Remover as variaveis de ambiente do r2 e colocar no secrets do github
             account_id = os.getenv("R2_ACCOUNT_ID", "48fa1385059fbcc68f11774bdcb577c1")
             endpoint = os.getenv(
                 "R2_ENDPOINT", f"https://{account_id}.r2.cloudflarestorage.com"
@@ -31,6 +32,7 @@ class DuckDBClient:
             access_key = os.getenv(
                 "R2_ACCESS_KEY_ID", "3840fcd4b7aea43f3c7c5bd77bc21115"
             )
+            #Remover as variaveis de ambiente do r2 e colocar no secrets do github
             secret_key = os.getenv(
                 "R2_SECRET_ACCESS_KEY",
                 "ea8133f8c99f17420ac895de78d025aede56445ceb140559d013f7af0e85b3ad",
