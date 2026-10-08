@@ -161,6 +161,21 @@ rclone lsf r2:buscafri-data --max-depth 1
 comando lsf do rclone para listar a raiz do bucket remoto configurado:
 uv run python -c "import subprocess; print(subprocess.run(['rclone', 'lsf', 'r2:buscafri-data', '--max-depth', '1'], capture_output=True, text=True).stdout)"
 
+
+1. Subindo a API FastAPI
+Abra um terminal e execute:
+
+Run
+uv run uvicorn app.main:app --reload --port 8000
+O que faz: Inicia a API na porta 8000. O --reload fará com que o servidor reinicie automaticamente sempre que você salvar um arquivo no diretório app/.
+
+2. Subindo o Streamlit
+Abra outro terminal e execute:
+
+Run
+uv run streamlit run app/ui.py --server.port=8501
+O que faz: Inicia a interface visual na porta 8501. Ela tentará se comunicar com a API que está rodando na porta 8000.
+
 ---
 
 ## 🔄 Fluxo de Dados Completo: "Buscar todas as empresas da Bahia (UF=BA) com situação cadastral Ativa"

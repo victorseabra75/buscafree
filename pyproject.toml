@@ -16,6 +16,7 @@ dependencies = [
     "streamlit",
     "httpx2>=2.13.1",
     "pytest-asyncio>=1.4.0",
+    "pydantic-settings>=2.15.0",
 ]
 
 [dependency-groups]

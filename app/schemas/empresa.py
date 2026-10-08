@@ -1,7 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class EmpresaBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     cnpj_basico: str
     razao_social: str
     nome_fantasia: str | None = None

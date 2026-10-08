@@ -1,5 +1,4 @@
 import io
-import os
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -7,31 +6,24 @@ from fastapi.responses import StreamingResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from app.core.config import settings
 from app.core.database import db_client
 from app.schemas.empresa import EmpresaResponse
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(
+    key_func=get_remote_address,
+    enabled=settings.APP_ENV != "testing",
+)
 
 
 # ============================================================
 # CONFIGURAÇÃO DOS DADOS
 # ============================================================
 
-# Estabelecimentos particionados por UF.
-# Pode ser caminho local ou caminho S3/R2.
-ESTAB_PATH = os.getenv(
-    "ESTAB_PATH",
-    "data/particionado/estabelecimentos",
-)
-
-# Bucket R2.
-R2_BUCKET_NAME = os.getenv(
-    "R2_BUCKET_NAME",
-    "buscafri-data",
-)
-
-R2_PATH = f"s3://{R2_BUCKET_NAME}"
+ESTAB_PATH = settings.ESTAB_PATH
+EMPRESAS_PATH = settings.EMPRESAS_PATH
+R2_PATH = settings.R2_PATH
 
 
 # ============================================================
@@ -138,7 +130,7 @@ async def buscar_empresas(
         ) AS est
 
         JOIN read_parquet(
-            '{R2_PATH}/empresas/*.parquet'
+            '{EMPRESAS_PATH}/*.parquet'
         ) AS emp
             ON est.cnpj_basico = emp.cnpj_basico
 
@@ -179,6 +171,10 @@ async def buscar_empresas(
         total = total_df.iloc[0]["total"] if not total_df.empty else 0
 
         data = results.to_dict("records")
+        for item in data:
+            for k, v in item.items():
+                if pd.isna(v):
+                    item[k] = None
 
         return {
             "total_count": int(total),
@@ -265,7 +261,7 @@ async def exportar_dados(
         ) AS est
 
         JOIN read_parquet(
-            '{R2_PATH}/empresas/*.parquet'
+            '{EMPRESAS_PATH}/*.parquet'
         ) AS emp
             ON est.cnpj_basico = emp.cnpj_basico
 
