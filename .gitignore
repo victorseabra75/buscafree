@@ -27,8 +27,12 @@ CNPJS 2026 09.zip
 .env
 buscafree/
 .venv/
-data/raw/
+data/particionado/
+data/preprocessed/
 data/processed/
+data/processed_corrigido/
+data/prototipo/
+data/raw/
 __pycache__/
 
 # Infra e Tools

@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 import duckdb
 from dotenv import load_dotenv
@@ -11,26 +12,35 @@ class DuckDBClient:
         self.conn: duckdb.DuckDBPyConnection | None = None
         self.connect()
 
-    def connect(self):
+    def connect(self) -> None:
         try:
-            self.conn = duckdb.connect(database=":memory:", read_only=False)
+            self.conn = duckdb.connect(
+                database=":memory:",
+                read_only=False,
+            )
 
-            # Instala e carrega extensões para leitura S3 / HTTPS
+            # Instala e carrega extensão para leitura S3 / HTTPS
             self.conn.execute("INSTALL httpfs;")
             self.conn.execute("LOAD httpfs;")
 
-            # Configura credenciais para o Cloudflare R2
+            # Credenciais Cloudflare R2
             account_id = os.getenv("R2_ACCOUNT_ID")
             if not account_id:
                 raise ValueError(
                     "A variável de ambiente R2_ACCOUNT_ID não está definida."
                 )
 
+            token_value = os.getenv("R2_TOKEN_VALUE")
+            if not token_value:
+                raise ValueError(
+                    "A variável de ambiente R2_TOKEN_VALUE não está definida."
+                )
+
             endpoint = os.getenv(
-                "R2_ENDPOINT", f"https://{account_id}.r2.cloudflarestorage.com"
+                "R2_ENDPOINT",
+                f"https://{account_id}.r2.cloudflarestorage.com",
             )
 
-            # Remove https:// do endpoint para o formato do DuckDB se necessário
             clean_endpoint = endpoint.replace("https://", "").replace("http://", "")
 
             access_key = os.getenv("R2_ACCESS_KEY_ID")
@@ -51,13 +61,13 @@ class DuckDBClient:
             self.conn.execute("SET s3_url_style='path';")
             self.conn.execute("SET s3_region='auto';")
 
-            print("✅ Conectado ao DuckDB com suporte ao Cloudflare R2 S3")
+            print("[OK] Conectado ao DuckDB com suporte ao Cloudflare R2 S3")
 
         except Exception as e:  # noqa: BLE001
             self.conn = None
-            print(f"❌ Erro ao conectar ao DuckDB: {e}")
+            print(f"[ERRO] Erro ao conectar ao DuckDB: {e}")
 
-    def query(self, sql):
+    def query(self, sql: str):
         if self.conn is None:
             self.connect()
 
@@ -65,6 +75,19 @@ class DuckDBClient:
             raise RuntimeError("Não foi possível conectar ao DuckDB.")
 
         return self.conn.execute(sql).df()
+
+    def query_params(
+        self,
+        sql: str,
+        params: list[Any],
+    ):
+        if self.conn is None:
+            self.connect()
+
+        if self.conn is None:
+            raise RuntimeError("Não foi possível conectar ao DuckDB.")
+
+        return self.conn.execute(sql, params).df()
 
 
 db_client = DuckDBClient()

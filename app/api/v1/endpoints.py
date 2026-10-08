@@ -13,39 +13,97 @@ from app.schemas.empresa import EmpresaResponse
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
-# Caminho direto para os Parquets no Cloudflare R2 via protocolo S3
-BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "buscafri-data")
-R2_PATH = f"s3://{BUCKET_NAME}"
+
+# ============================================================
+# CONFIGURAÇÃO DOS DADOS
+# ============================================================
+
+# Estabelecimentos particionados por UF.
+# Pode ser caminho local ou caminho S3/R2.
+ESTAB_PATH = os.getenv(
+    "ESTAB_PATH",
+    "data/particionado/estabelecimentos",
+)
+
+# Bucket R2.
+R2_BUCKET_NAME = os.getenv(
+    "R2_BUCKET_NAME",
+    "buscafri-data",
+)
+
+R2_PATH = f"s3://{R2_BUCKET_NAME}"
+
+
+# ============================================================
+# BUSCA DE EMPRESAS
+# ============================================================
 
 
 @router.get("/busca", response_model=EmpresaResponse)
 @limiter.limit("10/minute")
 async def buscar_empresas(
     request: Request,
-    uf: str | None = Query(None, description="Sigla do estado (ex: BA)"),
-    municipio: str | None = Query(None, description="Código do município"),
-    cnae: str | None = Query(None, description="Código do CNAE"),
-    ativa: bool = Query(True, description="Filtrar apenas empresas ativas"),
-    com_telefone: bool = Query(
-        False, description="Filtrar apenas empresas com telefone"
+    uf: str | None = Query(
+        None,
+        description="Sigla do estado (ex: BA)",
     ),
-    com_email: bool = Query(False, description="Filtrar apenas empresas com e-mail"),
-    page: int = Query(1, ge=1),
-    limit: int = Query(20, le=100),
+    municipio: str | None = Query(
+        None,
+        description="Código do município",
+    ),
+    cnae: str | None = Query(
+        None,
+        description="Código do CNAE",
+    ),
+    ativa: bool = Query(
+        True,
+        description="Filtrar apenas empresas ativas",
+    ),
+    com_telefone: bool = Query(
+        False,
+        description="Filtrar apenas empresas com telefone",
+    ),
+    com_email: bool = Query(
+        False,
+        description="Filtrar apenas empresas com e-mail",
+    ),
+    page: int = Query(
+        1,
+        ge=1,
+    ),
+    limit: int = Query(
+        20,
+        ge=1,
+        le=100,
+    ),
 ):
     offset = (page - 1) * limit
 
     where_clauses = []
+    params = []
+
+    # --------------------------------------------------------
+    # Filtros
+    # --------------------------------------------------------
+
     if uf:
-        where_clauses.append(f"est.uf = '{uf.upper()}'")
+        where_clauses.append("est.uf = ?")
+        params.append(uf.upper())
+
     if municipio:
-        where_clauses.append(f"est.municipio = '{municipio}'")
+        where_clauses.append("est.municipio = ?")
+        params.append(municipio)
+
     if cnae:
-        where_clauses.append(f"est.cnae_fiscal_principal = '{cnae}'")
+        where_clauses.append("est.cnae_fiscal_principal = ?")
+        params.append(cnae)
+
     if ativa:
         where_clauses.append("est.situacao_cadastral = '02'")
+
     if com_telefone:
         where_clauses.append("(est.telefone_1 IS NOT NULL AND est.telefone_1 != '')")
+
     if com_email:
         where_clauses.append(
             "(est.correio_eletronico IS NOT NULL AND est.correio_eletronico != '')"
@@ -53,8 +111,12 @@ async def buscar_empresas(
 
     where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
 
+    # --------------------------------------------------------
+    # Consulta paginada
+    # --------------------------------------------------------
+
     sql = f"""
-        SELECT 
+        SELECT
             est.cnpj_basico,
             emp.razao_social,
             est.nome_fantasia,
@@ -63,29 +125,78 @@ async def buscar_empresas(
             est.municipio,
             est.cnae_fiscal_principal,
             est.correio_eletronico,
-            CONCAT('(', est.ddd_1, ') ', est.telefone_1) as telefone_1
-        FROM '{R2_PATH}/estabelecimentos/*.parquet' AS est
-        JOIN '{R2_PATH}/empresas/*.parquet' AS emp ON est.cnpj_basico = emp.cnpj_basico
+            CONCAT(
+                '(',
+                est.ddd_1,
+                ') ',
+                est.telefone_1
+            ) AS telefone_1
+
+        FROM read_parquet(
+            '{ESTAB_PATH}/**/*.parquet',
+            hive_partitioning = true
+        ) AS est
+
+        JOIN read_parquet(
+            '{R2_PATH}/empresas/*.parquet'
+        ) AS emp
+            ON est.cnpj_basico = emp.cnpj_basico
+
         WHERE {where_sql}
-        LIMIT {limit} OFFSET {offset}
+
+        LIMIT ?
+        OFFSET ?
     """
 
+    query_params = params + [limit, offset]
+
+    # --------------------------------------------------------
+    # Contagem total
+    # --------------------------------------------------------
+
     count_sql = f"""
-        SELECT COUNT(*) as total 
-        FROM '{R2_PATH}/estabelecimentos/*.parquet' AS est 
+        SELECT COUNT(*) AS total
+
+        FROM read_parquet(
+            '{ESTAB_PATH}/**/*.parquet',
+            hive_partitioning = true
+        ) AS est
+
         WHERE {where_sql}
     """
 
     try:
-        results = db_client.query(sql)
-        total_df = db_client.query(count_sql)
+        results = db_client.query_params(
+            sql,
+            query_params,
+        )
+
+        total_df = db_client.query_params(
+            count_sql,
+            params,
+        )
+
         total = total_df.iloc[0]["total"] if not total_df.empty else 0
 
         data = results.to_dict("records")
 
-        return {"total_count": int(total), "page": page, "limit": limit, "data": data}
-    except Exception as e:  # noqa: BLE001
-        raise HTTPException(status_code=500, detail=f"Erro na consulta: {e!s}")
+        return {
+            "total_count": int(total),
+            "page": page,
+            "limit": limit,
+            "data": data,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro na consulta: {e!s}",
+        ) from e
+
+
+# ============================================================
+# EXPORTAÇÃO
+# ============================================================
 
 
 @router.get("/exportar/{formato}")
@@ -94,22 +205,39 @@ async def exportar_dados(
     request: Request,
     formato: str,
     uf: str | None = Query(None),
-    ativa: bool = True,
-    com_telefone: bool = False,
-    com_email: bool = False,
+    ativa: bool = Query(True),
+    com_telefone: bool = Query(False),
+    com_email: bool = Query(False),
 ):
-    if formato not in ["csv", "xlsx"]:
+    # --------------------------------------------------------
+    # Validação do formato
+    # --------------------------------------------------------
+
+    formato = formato.lower()
+
+    if formato not in {"csv", "xlsx"}:
         raise HTTPException(
-            status_code=400, detail="Formato inválido. Use csv ou xlsx."
+            status_code=400,
+            detail="Formato inválido. Use csv ou xlsx.",
         )
 
+    # --------------------------------------------------------
+    # Filtros
+    # --------------------------------------------------------
+
     where_clauses = []
+    params = []
+
     if uf:
-        where_clauses.append(f"est.uf = '{uf.upper()}'")
+        where_clauses.append("est.uf = ?")
+        params.append(uf.upper())
+
     if ativa:
         where_clauses.append("est.situacao_cadastral = '02'")
+
     if com_telefone:
         where_clauses.append("(est.telefone_1 IS NOT NULL AND est.telefone_1 != '')")
+
     if com_email:
         where_clauses.append(
             "(est.correio_eletronico IS NOT NULL AND est.correio_eletronico != '')"
@@ -117,40 +245,96 @@ async def exportar_dados(
 
     where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
 
+    # --------------------------------------------------------
+    # Consulta
+    # --------------------------------------------------------
+
     sql = f"""
-        SELECT 
-            est.cnpj_basico, emp.razao_social, est.nome_fantasia, 
-            est.uf, est.municipio, est.correio_eletronico, est.telefone_1
-        FROM '{R2_PATH}/estabelecimentos/*.parquet' AS est
-        JOIN '{R2_PATH}/empresas/*.parquet' AS emp ON est.cnpj_basico = emp.cnpj_basico
+        SELECT
+            est.cnpj_basico,
+            emp.razao_social,
+            est.nome_fantasia,
+            est.uf,
+            est.municipio,
+            est.correio_eletronico,
+            est.telefone_1
+
+        FROM read_parquet(
+            '{ESTAB_PATH}/**/*.parquet',
+            hive_partitioning = true
+        ) AS est
+
+        JOIN read_parquet(
+            '{R2_PATH}/empresas/*.parquet'
+        ) AS emp
+            ON est.cnpj_basico = emp.cnpj_basico
+
         WHERE {where_sql}
+
         LIMIT 10000
     """
 
     try:
-        df = db_client.query(sql)
+        df = db_client.query_params(
+            sql,
+            params,
+        )
+
+        # ----------------------------------------------------
+        # CSV
+        # ----------------------------------------------------
 
         if formato == "csv":
             stream = io.StringIO()
-            df.to_csv(stream, index=False, sep=";", encoding="utf-8-sig")
-            response = StreamingResponse(
-                iter([stream.getvalue()]), media_type="text/csv"
+
+            df.to_csv(
+                stream,
+                index=False,
+                sep=";",
+                encoding="utf-8-sig",
             )
+
+            response = StreamingResponse(
+                iter([stream.getvalue()]),
+                media_type="text/csv",
+            )
+
             response.headers["Content-Disposition"] = (
                 "attachment; filename=buscafri_export.csv"
             )
+
             return response
-        else:
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-                df.to_excel(writer, index=False, sheet_name="Empresas")
-            output.seek(0)
-            return StreamingResponse(
-                io.BytesIO(output.read()),
-                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                headers={
-                    "Content-Disposition": "attachment; filename=buscafri_export.xlsx"
-                },
+
+        # ----------------------------------------------------
+        # XLSX
+        # ----------------------------------------------------
+
+        output = io.BytesIO()
+
+        with pd.ExcelWriter(
+            output,
+            engine="xlsxwriter",
+        ) as writer:
+            df.to_excel(
+                writer,
+                index=False,
+                sheet_name="Empresas",
             )
-    except Exception as e:  # noqa: BLE001
-        raise HTTPException(status_code=500, detail=f"Erro na exportação: {e!s}")
+
+        output.seek(0)
+
+        return StreamingResponse(
+            output,
+            media_type=(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ),
+            headers={
+                "Content-Disposition": ("attachment; filename=buscafri_export.xlsx")
+            },
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro na exportação: {e!s}",
+        ) from e

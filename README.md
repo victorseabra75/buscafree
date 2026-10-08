@@ -79,6 +79,15 @@
   3. DuckDB executa a filtragem colunar nos arquivos Parquet com projeção necessária.
   4. Retorna lista paginada de resultados.
 
+#### UC04 — Busca de Empresas por Estado (Ex: UF=BA e Ativas) via Interface e API
+- **Ator:** Usuário final via Dashboard (Streamlit) / Consumidor via API (FastAPI).
+- **Descrição:** Consulta analítica ponta a ponta para listar todas as empresas ativas localizadas na Bahia (UF=BA).
+- **Fluxo Detalhado (Arquitetura e Caminho dos Dados):**
+  1. **Frontend (`app/ui.py` - Streamlit):** O usuário define o estado `BA` e marca empresas ativas na sidebar, disparando um `GET /api/v1/busca?uf=BA&ativa=true`.
+  2. **Backend (`app/api/v1/endpoints.py` - FastAPI):** A API recebe a requisição, valida com `slowapi`, constrói a query SQL combinando `estabelecimentos/*.parquet` e `empresas/*.parquet` via `cnpj_basico`, aplicando os filtros `est.uf = 'BA'` e `est.situacao_cadastral = '02'`.
+  3. **Camada DuckDB & Cloud (`app/core/database.py`):** Utilizando a extensão `httpfs` e as credenciais S3 do Cloudflare R2, o DuckDB executa consultas colunares diretamente nos arquivos `.parquet` remotos no R2 sob demanda (sem descarregar os dados na VPS `e2-micro`).
+  4. **Serialização & Resposta (`app/schemas/empresa.py`):** Os resultados são validados pelo Pydantic, convertidos em JSON estruturado com paginação (`total_count`, `data`) e exibidos na interface interativa do Streamlit.
+
 ---
 
 ## 🛠️ Guia de Manutenção e ETL
@@ -148,3 +157,60 @@ pesquisar o que é visudo
 
 para pesquisar no r2 as pastas existentes:
 rclone lsf r2:buscafri-data --max-depth 1
+
+comando lsf do rclone para listar a raiz do bucket remoto configurado:
+uv run python -c "import subprocess; print(subprocess.run(['rclone', 'lsf', 'r2:buscafri-data', '--max-depth', '1'], capture_output=True, text=True).stdout)"
+
+---
+
+## 🔄 Fluxo de Dados Completo: "Buscar todas as empresas da Bahia (UF=BA) com situação cadastral Ativa"
+
+Este caso de uso detalha o percurso completo da informação — desde a interface visual do usuário até a leitura direta dos arquivos em nuvem por meio do DuckDB e retorno paginado.
+
+### 1. Arquivos do Projeto Envolvidos
+- **Frontend (Dashboard):** `app/ui.py` (Streamlit)
+- **API & Endpoints Backend:** `app/api/v1/endpoints.py` (FastAPI)
+- **Validação & Schemas Pydantic:** `app/schemas/empresa.py` (Pydantic)
+- **Camada de Conexão & Cliente DuckDB:** `app/core/database.py` (DuckDB + Extensão `httpfs`)
+- **Armazenamento em Nuvem (S3-compatible):** Cloudflare R2 (`s3://buscafri-data/...`)
+
+### 2. Papel de Cada Arquivo (Passo a Passo)
+- **`app/ui.py` (Streamlit - Frontend):**
+  - O usuário seleciona o estado `BA` na barra lateral (*Sidebar*) e garante que o checkbox "Apenas empresas Ativas" (`ativa=True`) está marcado.
+  - Ao clicar no botão **"🚀 Pesquisar"**, o Streamlit monta um dicionário de parâmetros (`params = {"uf": "BA", "ativa": True, ...}`) e dispara uma requisição HTTP `GET` para a API FastAPI através da biblioteca `requests` (`GET /api/v1/busca?uf=BA&ativa=true`).
+- **`app/api/v1/endpoints.py` (FastAPI - Backend):**
+  - A rota `@router.get("/busca", response_model=EmpresaResponse)` intercepta a requisição.
+  - O rate limiter (`slowapi`) valida o limite de taxa de requisições por IP.
+  - O código monta dinamicamente a query SQL analítica filtrando por `est.uf = 'BA'` e `est.situacao_cadastral = '02'` (ativa), realizando o `JOIN` entre a tabela de estabelecimentos (`estabelecimentos/*.parquet`) e empresas (`empresas/*.parquet`) utilizando o `cnpj_basico`.
+- **`app/core/database.py` (DuckDB Client & S3 HTTPfs):**
+  - A API utiliza o objeto `db_client` para executar a query enviada.
+  - O cliente inicializa o DuckDB em memória, carrega e ativa a extensão `httpfs` e configura as credenciais S3 (`s3_endpoint`, `s3_access_key_id`, `s3_secret_access_key`) apontando para o Cloudflare R2.
+  - O DuckDB faz uma leitura colunar eficiente via HTTPS (`s3://`) diretamente nos arquivos `.parquet` remotos no Cloudflare R2, sem baixar a base de dados inteira para o disco da VPS.
+- **Cloudflare R2 (Armazenamento S3):**
+  - O Cloudflare R2 recebe a requisição HTTP range-based do DuckDB e retorna apenas as colunas e blocos necessários dos arquivos Parquet localizados em `s3://buscafri-data/estabelecimentos/*.parquet` e `s3://buscafri-data/empresas/*.parquet`.
+- **`app/schemas/empresa.py` (Pydantic Schema) & Retorno:**
+  - O DuckDB converte o resultado em um DataFrame do Pandas, que é serializado em dicionário Python.
+  - A FastAPI valida o formato utilizando os modelos `EmpresaResponse` e `EmpresaBase` definidos no Pydantic.
+  - A API retorna um JSON estruturado contendo o `total_count` (contagem total via `COUNT(*)`) e a lista paginada de empresas (`data`).
+  - O Streamlit (`app/ui.py`) recebe a resposta 200 OK, exibe o total de registros encontrados e renderiza a tabela interativa (`st.dataframe`).
+
+### 3. Caminho dos Dados (Resumo do Fluxo)
+
+```text
+[ Streamlit UI (app/ui.py) ]
+           │ (HTTP GET /api/v1/busca?uf=BA&ativa=true)
+           ▼
+[ FastAPI Backend (app/api/v1/endpoints.py) ]
+           │ (Montagem de Query SQL Analítica)
+           ▼
+[ DuckDB Client (app/core/database.py) + Extensão httpfs ]
+           │ (Leitura colunar sob demanda via protocolo S3)
+           ▼
+[ Cloudflare R2 Storage (s3://buscafri-data/*.parquet) ]
+           │ (Retorno de metadados / blocos Parquet filtrados)
+           ▼
+[ FastAPI + Pydantic Serialization (app/schemas/empresa.py) ]
+           │ (JSON Paginado)
+           ▼
+[ Streamlit UI: Renderização da Tabela e Indicadores ]
+```
