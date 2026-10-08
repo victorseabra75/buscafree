@@ -65,3 +65,52 @@
 - [ ] Liberar porta 8501 no Firewall da GCP.
 - [ ] Realizar smoke tests na API e UI remota.
 
+---
+
+## 5. Estado Atual do Projeto
+
+### Ambiente ativo
+- Desenvolvimento local está ativo.
+- Testes locais estão ativos.
+- Cloudflare R2 está disponível como armazenamento de dados.
+- FastAPI e DuckDB estão sendo utilizados localmente.
+- Os Parquet corrigidos (`data/processed_corrigido/`) e particionados (`data/particionado/estabelecimentos/`) estão disponíveis localmente.
+
+### Produção
+- A VPS de produção NÃO está atualmente operacional.
+- O ambiente de produção está temporariamente bloqueado.
+- A configuração necessária para produção existe/preparada no código (vias variáveis de ambiente), mas não está validada em uma VPS ativa.
+
+### Infraestrutura ainda não implementada
+- Nginx/Caddy;
+- Domínio;
+- DNS;
+- SSL/TLS;
+- Validação final de firewall;
+- Validação de latência API → R2 em ambiente real.
+
+### Dados
+- Parquet corrigidos em `data/processed_corrigido/`;
+- Tabela `estabelecimentos` particionada por UF em `data/particionado/estabelecimentos/`;
+- Estrutura Hive;
+- 28 partições identificadas;
+- Compressão SNAPPY;
+- Tipagem física atual VARCHAR.
+
+### Backend
+- FastAPI;
+- DuckDB com extensão `httpfs` (S3);
+- Rotas principais `/api/v1`;
+- Rate limiting implementado.
+
+### Testes
+- Suíte atual com 17 testes;
+- Testes de API, particionamento, R2 e ETL;
+- Testes de integração dependem parcialmente de dados Parquet locais reais.
+
+### Limitações conhecidas
+- Cobertura limitada de configuração local/produção;
+- Ausência de validação de alta concorrência;
+- Dependência dos testes de integração de dados locais;
+- Produção ainda não validada contra R2 em uma VPS real.
+
