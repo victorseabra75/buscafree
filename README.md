@@ -229,3 +229,5 @@ Este caso de uso detalha o percurso completo da informação — desde a interfa
            ▼
 [ Streamlit UI: Renderização da Tabela e Indicadores ]
 ```
+
+ad
